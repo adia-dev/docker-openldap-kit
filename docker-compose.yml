@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  openldap:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      # Set the password here or use the .env file
+      # - SLAPD_ROOT_PASSWORD="VeryStrongPassword!"
+      - SLAPD_DOMAIN="adia.dev"
+      - SLAPD_ORGANIZATION="Adia Company"
+      - SLAPD_BACKEND="MDB"
+      - SLAPD_PURGE_DB=false
+      - SLAPD_DUMP_DB=false
+    ports:
+      - "389:389"
+      - "636:636"
+    # BUG: Volumes makes the slapd service unable to start
+    # volumes:
+      # - ./conf:/etc/ldap
+      # - ./data:/var/lib/ldap
+      # - ./slapd.d:/etc/ldap/slapd.d
+    networks:
+      - ldap_network
+
+  phpldapadmin:
+    image: osixia/phpldapadmin:0.9.0
+    environment:
+      - PHPLDAPADMIN_LDAP_HOSTS=openldap
+    ports:
+      - "6443:443"
+    depends_on:
+      - openldap
+    networks:
+      - ldap_network
+
+networks:
+  ldap_network:
+    driver: bridge
